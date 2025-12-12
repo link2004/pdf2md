@@ -23,7 +23,7 @@
     "jszip": "^3.10.1",
     "katex": "^0.16.21",
     "lucide-react": "^0.479.0",
-    "next": "15.2.2",
+    "next": "15.2.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
