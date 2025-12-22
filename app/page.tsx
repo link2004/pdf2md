@@ -9,7 +9,9 @@ import Header from "./components/Header";
 import { useDropzone } from "react-dropzone";
 import Footer from "./components/Footer";
 import { useSearchParams } from "next/navigation";
-import { getTranslations, getLanguageFromSearchParams } from "./lib/i18n";
+import { getTranslations, getLanguageFromSearchParams, formatTranslation } from "./lib/i18n";
+import { downloadAsZip } from "./action/downloadHelper";
+import { Copy, Check } from "lucide-react";
 
 export default function FileUploader() {
   const searchParams = useSearchParams();
@@ -30,7 +32,10 @@ export default function FileUploader() {
   >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState<"upload" | "analyze" | "result">("upload");
-  const [activeTab, setActiveTab] = useState<"preview" | "result">("preview");
+  const [activeTab, setActiveTab] = useState<"preview" | "result" | "text">("preview");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [copyingAll, setCopyingAll] = useState(false);
+  const [copyingPage, setCopyingPage] = useState<number | null>(null);
 
   // Supported file types
   const acceptedFileTypes = {
@@ -196,6 +201,78 @@ export default function FileUploader() {
     }
   }, [ocrResult, processing]);
 
+  // クリップボードにコピーする関数（個別ページ用）
+  const copyToClipboard = async (text: string, pageIndex?: number | null) => {
+    try {
+      await navigator.clipboard.writeText(text);
+
+      if (pageIndex !== undefined && pageIndex !== null) {
+        // 個別ページコピーの場合
+        setCopyingPage(pageIndex);
+        setTimeout(() => {
+          setCopyingPage(null);
+        }, 3000);
+      }
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  };
+
+  // すべてのページのマークダウンを結合してコピーする関数
+  const copyAllMarkdown = async () => {
+    if (!ocrResult || "error" in ocrResult || !ocrResult.pages) return;
+
+    const allMarkdown = ocrResult.pages
+      .map((page) => {
+        const pageTitle = `# ${formatTranslation(t.pageIndicator, {
+          current: page.index + 1,
+          total: ocrResult.pages?.length ?? 0,
+        })}\n\n`;
+        return pageTitle + (page.markdown || t.noTextOnPage);
+      })
+      .join("\n\n---\n\n");
+
+    try {
+      await navigator.clipboard.writeText(allMarkdown);
+      setCopyingAll(true);
+      setTimeout(() => {
+        setCopyingAll(false);
+      }, 3000);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  };
+
+  // ZIPファイルとしてダウンロードする関数
+  const handleDownloadZip = async () => {
+    if (!ocrResult || "error" in ocrResult || !ocrResult.pages) return;
+
+    try {
+      setIsDownloading(true);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").substring(0, 19);
+      await downloadAsZip(ocrResult, `ocr-export-${timestamp}`);
+    } catch (error) {
+      console.error("ZIP download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // マークダウンのみをダウンロードする関数
+  const handleDownloadMarkdown = async () => {
+    if (!ocrResult || "error" in ocrResult || !ocrResult.pages) return;
+
+    try {
+      setIsDownloading(true);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").substring(0, 19);
+      await downloadAsZip(ocrResult, `ocr-markdown-${timestamp}`, true);
+    } catch (error) {
+      console.error("Markdown download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleReset = () => {
     // Clean up object URL to prevent memory leaks
     if (localFileUrl) {
@@ -207,6 +284,8 @@ export default function FileUploader() {
     setOcrResult(null);
     setCurrentStep("upload");
     setActiveTab("preview");
+    setIsDownloading(false);
+    setCopyingAll(false);
   };
 
   // Initial upload state
@@ -261,6 +340,12 @@ export default function FileUploader() {
         translations={t} 
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        ocrResult={ocrResult}
+        onCopyAll={copyAllMarkdown}
+        onDownloadZip={handleDownloadZip}
+        onDownloadMarkdown={handleDownloadMarkdown}
+        isDownloading={isDownloading}
+        copyingAll={copyingAll}
       />
 
       {/* Main content: 2-column layout */}
@@ -334,7 +419,7 @@ export default function FileUploader() {
 
         {/* Right side: OCR results */}
         <div className={`w-full md:w-1/2 p-0 md:p-2 overflow-auto bg-white md:bg-gray-50 ${
-          activeTab === 'result' ? 'block h-full' : 'hidden md:block'
+          activeTab === 'result' || activeTab === 'text' ? 'block h-full' : 'hidden md:block'
         }`}>
           {processing ? (
             <div className="h-full flex flex-col items-center justify-center">
@@ -364,11 +449,59 @@ export default function FileUploader() {
           ) : ocrResult ? (
             <div className="h-full flex flex-col">
               <div className="flex-1 overflow-auto">
-                <OcrResultView
-                  ocrResult={ocrResult}
-                  analyzing={false}
-                  translations={t}
-                />
+                {activeTab === 'text' ? (
+                  <div className="h-full p-4">
+                    {!("error" in ocrResult) && ocrResult.pages && ocrResult.pages.length > 0 ? (
+                      ocrResult.pages.map((page, index) => {
+                        const rawMarkdown = page.markdown || t.noTextOnPage;
+                        
+                        return (
+                          <div key={`text-page-${index}`} className="mb-4">
+                            <div className="bg-muted rounded-lg p-1">
+                              <pre className="max-w-none text-xs p-1 whitespace-pre-wrap font-mono overflow-x-auto">
+                                {rawMarkdown}
+                              </pre>
+                              {/* ページ番号表示とコピーボタン */}
+                              <div className="flex justify-between items-center px-1 py-1 border-t border-gray-200">
+                                <div className="flex-1"></div>
+                                <span className="text-xs text-gray-500">
+                                  {page.index + 1}/{ocrResult.pages.length}
+                                </span>
+                                <div className="flex-1 flex justify-end">
+                                  <button
+                                    onClick={() => rawMarkdown && copyToClipboard(rawMarkdown, page.index)}
+                                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                                    title={t.copy}
+                                    disabled={!rawMarkdown}
+                                  >
+                                    {copyingPage === page.index ? (
+                                      <Check className="h-4 w-4 text-green-500" />
+                                    ) : (
+                                      <Copy className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            {index < ocrResult.pages.length - 1 && (
+                              <hr className="border-black my-2" />
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <p className="text-sm">{t.noPageData}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <OcrResultView
+                    ocrResult={ocrResult}
+                    analyzing={false}
+                    translations={t}
+                  />
+                )}
               </div>
             </div>
           ) : (
