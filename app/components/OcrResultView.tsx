@@ -733,7 +733,8 @@ export default function OcrResultView({ ocrResult, analyzing, translations }: Oc
                     },
                     img: ({ src, alt }) => {
                       // マークダウン内の画像参照とページの画像データを照合
-                      const fileName = src?.split("/").pop() || "";
+                      const srcString = typeof src === "string" ? src : "";
+                      const fileName = srcString?.split("/").pop() || "";
                       // 現在のページから一致する画像IDを持つ画像を探す
                       const matchedImage = page.images?.find((img) => img.id === fileName);
 
@@ -741,6 +742,7 @@ export default function OcrResultView({ ocrResult, analyzing, translations }: Oc
                         // base64データの形式を取得
                         const base64Src = getImageFormat(matchedImage.imageBase64);
                         return (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={base64Src}
                             alt={alt || ""}
@@ -751,8 +753,9 @@ export default function OcrResultView({ ocrResult, analyzing, translations }: Oc
 
                       // 画像が見つからない場合は元のsrcを使用
                       return (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={src || ""}
+                          src={srcString}
                           alt={alt || ""}
                           className="max-w-full h-auto rounded shadow-sm my-3 mx-auto block"
                         />

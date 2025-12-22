@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { uploadPdfToVercelBlob, uploadImageToVercelBlob } from "./action/storage";
-import { processMistralOcr, processMistralImageOcr } from "./action/mistral";
+import { processPdfWithMistral, processImageWithMistral } from "./action/mistral";
 import { OCRResponse } from "@mistralai/mistralai/src/models/components/ocrresponse.js";
 import OcrResultView from "./components/OcrResultView";
 import UploadResult from "./components/UploadResult";
@@ -18,14 +17,14 @@ export default function FileUploader() {
   const t = getTranslations(lang);
 
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [localFileUrl, setLocalFileUrl] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
     success: boolean;
     url?: string;
     fileType?: "pdf" | "image";
     errorMessage?: string;
   } | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [ocrResult, setOcrResult] = useState<
     OCRResponse | { success: false; error: string } | null
   >(null);
@@ -70,7 +69,7 @@ export default function FileUploader() {
       setFile(newFile);
       setUploadResult(null);
       setOcrResult(null);
-      handleUpload(newFile);
+      handleProcess(newFile);
     }
   };
 
@@ -98,86 +97,83 @@ export default function FileUploader() {
       setFile(selectedFile);
       setUploadResult(null);
       setOcrResult(null);
-      handleUpload(selectedFile);
+      handleProcess(selectedFile);
     }
   };
 
-  const handleUpload = async (selectedFile?: File) => {
-    const fileToUpload = selectedFile || file;
-    if (!fileToUpload) return;
+  // Convert File to Base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64 = result.split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
-    setUploading(true);
+  const handleProcess = async (selectedFile?: File) => {
+    const fileToProcess = selectedFile || file;
+    if (!fileToProcess) return;
+
+    setProcessing(true);
     setUploadResult(null);
     setOcrResult(null);
-    setCurrentStep("upload");
+    setCurrentStep("analyze");
+
+    // Create local URL for preview
+    const objectUrl = URL.createObjectURL(fileToProcess);
+    setLocalFileUrl(objectUrl);
 
     try {
-      const fileType = getFileType(fileToUpload);
+      const fileType = getFileType(fileToProcess);
       if (!fileType) {
         throw new Error("Unsupported file format");
       }
 
-      let result;
-      let publicUrl;
-
-      // Upload based on file type
-      if (fileType === "pdf") {
-        result = await uploadPdfToVercelBlob(fileToUpload);
-        if (result.error) throw result.error;
-        if (result.url) publicUrl = result.url;
-      } else {
-        result = await uploadImageToVercelBlob(fileToUpload);
-        if (result.error) throw result.error;
-        if (result.url) publicUrl = result.url;
-      }
-
-      if (!publicUrl) throw new Error("Could not get file URL");
-
+      // Set upload result for preview
       setUploadResult({
         success: true,
-        url: publicUrl,
+        url: objectUrl,
         fileType: fileType,
       });
+
+      // Convert file to base64
+      const base64Data = await fileToBase64(fileToProcess);
+
+      let response;
+
+      if (fileType === "pdf") {
+        // PDF: Upload to S3, process OCR, then delete
+        response = await processPdfWithMistral(base64Data, fileToProcess.name, true);
+      } else {
+        // Image: Process directly with Base64 Data URL (no storage needed)
+        response = await processImageWithMistral(base64Data, fileToProcess.type, true);
+      }
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      if (response.result) {
+        console.log(`${fileType === "pdf" ? t.pdf : t.image} analysis result:`, response.result);
+        setOcrResult(response.result);
+        setCurrentStep("result");
+      }
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setCurrentStep("analyze");
-      handleAnalyze(publicUrl, fileType);
     } catch (error) {
+      console.error("Processing error:", error);
       setUploadResult({
         success: false,
         errorMessage: error instanceof Error ? error.message : undefined,
       });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleAnalyze = async (fileUrl?: string, fileType?: "pdf" | "image") => {
-    const urlToAnalyze = fileUrl || uploadResult?.url;
-    const typeToAnalyze = fileType || uploadResult?.fileType;
-
-    if (!urlToAnalyze || !typeToAnalyze) return;
-
-    setAnalyzing(true);
-    setOcrResult(null);
-    setCurrentStep("analyze");
-
-    try {
-      let response;
-
-      if (typeToAnalyze === "pdf") {
-        response = await processMistralOcr(urlToAnalyze, true);
-      } else {
-        response = await processMistralImageOcr(urlToAnalyze, true);
-      }
-
-      console.log(`${typeToAnalyze === "pdf" ? t.pdf : t.image} analysis result:`, response);
-      setOcrResult(response);
-      setCurrentStep("result");
-    } catch (error) {
-      console.error(`${typeToAnalyze === "pdf" ? t.pdf : t.image} analysis error:`, error);
       setOcrResult({
         success: false,
         error:
@@ -186,12 +182,17 @@ export default function FileUploader() {
             : t.analysisError,
       });
     } finally {
-      setAnalyzing(false);
+      setProcessing(false);
     }
   };
 
   const handleReset = () => {
+    // Clean up object URL to prevent memory leaks
+    if (localFileUrl) {
+      URL.revokeObjectURL(localFileUrl);
+    }
     setFile(null);
+    setLocalFileUrl(null);
     setUploadResult(null);
     setOcrResult(null);
     setCurrentStep("upload");
@@ -283,7 +284,7 @@ export default function FileUploader() {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
-              {uploading ? (
+              {processing && !uploadResult?.url ? (
                 <div className="text-center">
                   <svg
                     className="animate-spin h-10 w-10 text-orange-500 mx-auto mb-2"
@@ -316,7 +317,7 @@ export default function FileUploader() {
 
         {/* Right side: OCR results */}
         <div className="w-full md:w-1/2 md:p-4 p-0 overflow-auto">
-          {analyzing ? (
+          {processing ? (
             <div className="h-full flex flex-col items-center justify-center">
               <svg
                 className="animate-spin h-12 w-12 text-orange-500 mb-4"
@@ -364,8 +365,8 @@ export default function FileUploader() {
         <div className="fixed bottom-4 right-4 max-w-md">
           <UploadResult
             uploadResult={uploadResult}
-            analyzing={analyzing}
-            onAnalyze={() => handleAnalyze()}
+            analyzing={processing}
+            onAnalyze={() => {}}
             translations={t}
           />
         </div>
