@@ -20,10 +20,6 @@ type OcrResultViewProps = {
 export default function OcrResultView({ ocrResult, analyzing, translations }: OcrResultViewProps) {
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const containerRef = useRef<HTMLDivElement>(null);
-  const [copyMessage, setCopyMessage] = useState<{
-    text: string;
-    pageIndex?: number | null;
-  } | null>(null);
   const [copyingPage, setCopyingPage] = useState<number | null>(null);
 
   // クリップボードにコピーする関数
@@ -40,10 +36,6 @@ export default function OcrResultView({ ocrResult, analyzing, translations }: Oc
       }
     } catch (err) {
       console.error("Copy failed:", err);
-      setCopyMessage({ text: translations.copyFailed, pageIndex });
-      setTimeout(() => {
-        setCopyMessage(null);
-      }, 3000);
     }
   };
 

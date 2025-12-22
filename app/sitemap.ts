@@ -1,92 +1,30 @@
 import { MetadataRoute } from "next";
+import { supportedLanguages } from "./lib/i18n";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://pdf2md.app";
 
-  return [
-    // デフォルト（英語）
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    // 日本語
-    {
-      url: `${baseUrl}/?lang=ja`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    // 韓国語
-    {
-      url: `${baseUrl}/?lang=ko`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // 中国語
-    {
-      url: `${baseUrl}/?lang=zh`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // ドイツ語
-    {
-      url: `${baseUrl}/?lang=de`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // フランス語
-    {
-      url: `${baseUrl}/?lang=fr`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // スペイン語
-    {
-      url: `${baseUrl}/?lang=es`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // イタリア語
-    {
-      url: `${baseUrl}/?lang=it`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // ポルトガル語
-    {
-      url: `${baseUrl}/?lang=pt`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // ロシア語
-    {
-      url: `${baseUrl}/?lang=ru`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // アラビア語
-    {
-      url: `${baseUrl}/?lang=ar`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    // ヒンディー語
-    {
-      url: `${baseUrl}/?lang=hi`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-  ];
+  // Priority based on traffic data
+  const priorityMap: Record<string, number> = {
+    en: 1.0,    // Default + US 15%
+    ru: 0.95,   // Russia 26%
+    ja: 0.9,    // Japan 17%
+    ko: 0.85,   // South Korea 11%
+    nl: 0.8,    // Netherlands 7%
+    de: 0.75,   // Germany 3%
+    zh: 0.7,
+    fr: 0.7,
+    es: 0.7,
+    it: 0.65,
+    pt: 0.65,
+    ar: 0.6,
+    hi: 0.6,
+  };
+
+  return supportedLanguages.map((lang) => ({
+    url: `${baseUrl}/${lang}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: priorityMap[lang] || 0.5,
+  }));
 }
