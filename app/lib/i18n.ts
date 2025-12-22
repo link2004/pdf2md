@@ -143,7 +143,7 @@ const enTranslations: Translations = {
   goToBottom: "Go to Bottom",
   pageIndicator: "Page {current}/{total}",
 
-  footerText: "© 2025 riku ogawa. All rights reserved.",
+  footerText: "© 2025 riku ogawa.",
   footerBuiltWith: "powered by",
   footerSource: "Source",
 };
@@ -209,7 +209,7 @@ const translations: Record<Language, Partial<Translations>> = {
     goToBottom: "末尾へ",
     pageIndicator: "ページ {current}/{total}",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
     footerBuiltWith: "Powered by",
     footerSource: "ソース",
   },
@@ -238,7 +238,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "업로드 중 오류가 발생했습니다",
     analysisError: "분석 중 오류가 발생했습니다",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   zh: {
     title: "PDF to Markdown",
@@ -265,7 +265,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "上传时发生错误",
     analysisError: "分析时发生错误",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   de: {
     title: "PDF to Markdown",
@@ -293,7 +293,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "Fehler beim Hochladen",
     analysisError: "Fehler bei der Analyse",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   fr: {
     title: "PDF to Markdown",
@@ -321,7 +321,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "Erreur lors du téléchargement",
     analysisError: "Erreur lors de l'analyse",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   es: {
     title: "PDF to Markdown",
@@ -349,7 +349,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "Error durante la subida",
     analysisError: "Error durante el análisis",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   it: {
     title: "PDF to Markdown",
@@ -377,7 +377,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "Errore durante il caricamento",
     analysisError: "Errore durante l'analisi",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   pt: {
     title: "PDF to Markdown",
@@ -405,7 +405,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "Erro durante o envio",
     analysisError: "Erro durante a análise",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   ru: {
     title: "PDF to Markdown",
@@ -433,7 +433,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "Ошибка при загрузке",
     analysisError: "Ошибка при анализе",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   ar: {
     title: "PDF to Markdown",
@@ -460,7 +460,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "خطأ أثناء الرفع",
     analysisError: "خطأ أثناء التحليل",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
   hi: {
     title: "PDF to Markdown",
@@ -487,7 +487,7 @@ const translations: Record<Language, Partial<Translations>> = {
     uploadError: "अपलोड के दौरान त्रुटि",
     analysisError: "विश्लेषण के दौरान त्रुटि",
 
-    footerText: "© 2025 riku ogawa. All rights reserved.",
+    footerText: "© 2025 riku ogawa.",
   },
 };
 

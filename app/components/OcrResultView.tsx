@@ -507,7 +507,7 @@ export default function OcrResultView({ ocrResult, analyzing, translations }: Oc
           </div>
 
           {/* ボタン群 */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-row gap-2">
             <button
               onClick={handleDownloadZip}
               className={`text-xs px-3 py-2 bg-gray-50 text-gray-600 hover:bg-gray-100 rounded transition-colors flex items-center justify-center w-full ${

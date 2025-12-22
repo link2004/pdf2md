@@ -84,7 +84,7 @@ export default function Header({
       )}
 
       {isInitialUpload && (
-        <h1 className="text-xl font-bold text-gray-800 align-middle">
+        <h1 className="text-xl font-bold text-gray-800 leading-10">
           {translations.title}
         </h1>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { processPdfWithMistral, processImageWithMistral } from "./action/mistral";
 import { OCRResponse } from "@mistralai/mistralai/src/models/components/ocrresponse.js";
 import OcrResultView from "./components/OcrResultView";
@@ -125,6 +125,8 @@ export default function FileUploader() {
     setUploadResult(null);
     setOcrResult(null);
     setCurrentStep("analyze");
+    // 分析開始時からmarkdownタブを表示
+    setActiveTab("result");
 
     // Create local URL for preview
     const objectUrl = URL.createObjectURL(fileToProcess);
@@ -164,8 +166,6 @@ export default function FileUploader() {
         console.log(`${fileType === "pdf" ? t.pdf : t.image} analysis result:`, response.result);
         setOcrResult(response.result);
         setCurrentStep("result");
-        // 分析完了後は結果タブを表示（スマホ用）
-        setActiveTab("result");
       }
 
       if (fileInputRef.current) {
@@ -189,6 +189,13 @@ export default function FileUploader() {
     }
   };
 
+  // OCR結果が設定されたらmarkdownタブに切り替え
+  useEffect(() => {
+    if (ocrResult && !processing) {
+      setActiveTab("result");
+    }
+  }, [ocrResult, processing]);
+
   const handleReset = () => {
     // Clean up object URL to prevent memory leaks
     if (localFileUrl) {
@@ -199,6 +206,7 @@ export default function FileUploader() {
     setUploadResult(null);
     setOcrResult(null);
     setCurrentStep("upload");
+    setActiveTab("preview");
   };
 
   // Initial upload state
@@ -209,7 +217,7 @@ export default function FileUploader() {
 
         <div
           {...getRootProps()}
-          className={`flex-1 flex flex-col items-center justify-center p-8 m-6 mt-0 border-2 border-dashed rounded-xl transition-all duration-200 ${
+          className={`flex-1 flex flex-col items-center justify-center p-8 mt-[10px] mr-[10px] ml-[10px] mb-[10px] border-2 border-dashed rounded-xl transition-all duration-200 ${
             isDragActive
               ? "border-blue-500 bg-blue-50"
               : "border-gray-300 bg-gray-50 hover:border-orange-400 hover:bg-orange-50"
