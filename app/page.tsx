@@ -30,6 +30,7 @@ export default function FileUploader() {
   >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState<"upload" | "analyze" | "result">("upload");
+  const [activeTab, setActiveTab] = useState<"preview" | "result">("preview");
 
   // Supported file types
   const acceptedFileTypes = {
@@ -163,6 +164,8 @@ export default function FileUploader() {
         console.log(`${fileType === "pdf" ? t.pdf : t.image} analysis result:`, response.result);
         setOcrResult(response.result);
         setCurrentStep("result");
+        // 分析完了後は結果タブを表示（スマホ用）
+        setActiveTab("result");
       }
 
       if (fileInputRef.current) {
@@ -243,28 +246,34 @@ export default function FileUploader() {
 
   // Upload, analysis, or result display state
   return (
-    <div className="flex flex-col h-screen w-full">
-      <Header currentStep={currentStep} onReset={handleReset} translations={t} />
+    <div className="flex flex-col h-screen w-full bg-gray-50">
+      <Header 
+        currentStep={currentStep} 
+        onReset={handleReset} 
+        translations={t} 
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       {/* Main content: 2-column layout */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left side: File preview */}
-        <div className="w-full md:w-1/2 p-4 overflow-auto bg-gray-100 border-r border-gray-200">
+        <div className={`w-full md:w-1/2 p-0 md:p-2 overflow-auto bg-gray-100 border-r border-gray-200 ${
+          activeTab === 'preview' ? 'block h-full' : 'hidden md:block'
+        }`}>
           {uploadResult?.url ? (
             <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold">
-                  {`${t.uploadedFile} (${uploadResult.fileType === "pdf" ? t.pdf : t.image})`}
+              <div className="flex items-center justify-between px-2 py-1 bg-white border-b border-gray-200">
+                <h2 className="text-xs font-semibold text-gray-700 truncate">
+                  {file?.name || t.uploadedFile}
                 </h2>
-
-                {/* File information */}
                 {file && (
-                  <div className="text-xs bg-white px-2 py-1 rounded-md text-gray-600 border border-gray-200">
-                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                  </div>
+                  <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </span>
                 )}
               </div>
-              <div className="flex-1 relative bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="flex-1 relative bg-gray-200 overflow-hidden">
                 {uploadResult.fileType === "pdf" ? (
                   <iframe
                     src={uploadResult.url}
@@ -287,7 +296,7 @@ export default function FileUploader() {
               {processing && !uploadResult?.url ? (
                 <div className="text-center">
                   <svg
-                    className="animate-spin h-10 w-10 text-orange-500 mx-auto mb-2"
+                    className="animate-spin h-8 w-8 text-orange-500 mx-auto mb-2"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -306,21 +315,23 @@ export default function FileUploader() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  <p className="font-medium">{t.uploading}</p>
+                  <p className="text-sm font-medium">{t.uploading}</p>
                 </div>
               ) : (
-                <p>{t.noFile}</p>
+                <p className="text-sm">{t.noFile}</p>
               )}
             </div>
           )}
         </div>
 
         {/* Right side: OCR results */}
-        <div className="w-full md:w-1/2 md:p-4 p-0 overflow-auto">
+        <div className={`w-full md:w-1/2 p-0 md:p-2 overflow-auto bg-white md:bg-gray-50 ${
+          activeTab === 'result' ? 'block h-full' : 'hidden md:block'
+        }`}>
           {processing ? (
             <div className="h-full flex flex-col items-center justify-center">
               <svg
-                className="animate-spin h-12 w-12 text-orange-500 mb-4"
+                className="animate-spin h-10 w-10 text-orange-500 mb-4"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -339,8 +350,8 @@ export default function FileUploader() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">{t.converting}</h3>
-              <p className="text-gray-500 text-center max-w-md">{t.convertingSubtext}</p>
+              <h3 className="text-lg font-semibold text-gray-700 mb-1">{t.converting}</h3>
+              <p className="text-gray-500 text-sm text-center max-w-xs">{t.convertingSubtext}</p>
             </div>
           ) : ocrResult ? (
             <div className="h-full flex flex-col">
@@ -354,11 +365,12 @@ export default function FileUploader() {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
-              <p>{t.noConversionResult}</p>
+              <p className="text-sm">{t.noConversionResult}</p>
             </div>
           )}
         </div>
       </div>
+
 
       {/* Upload result (displayed only for errors) */}
       {uploadResult && !uploadResult.success && (
