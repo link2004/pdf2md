@@ -69,7 +69,7 @@ export default async function LangLayout({ children, params }: Props) {
           }}
         />
       </head>
-      <body className="antialiased overflow-y-hidden">
+      <body className="antialiased overflow-hidden">
         {children}
         <Analytics />
       </body>

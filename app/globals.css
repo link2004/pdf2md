@@ -8,6 +8,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* モバイルブラウザのビューポート高さ対応 */
+/* svh = small viewport height (アドレスバー表示時の高さ、安定) */
+html, body {
+  height: 100%;
+  height: 100svh;
+}
+
+/* Tailwind h-screenをsvhに置き換え（モバイル対応） */
+@supports (height: 100svh) {
+  .h-screen {
+    height: 100svh !important;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
