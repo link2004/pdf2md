@@ -115,7 +115,7 @@ export default function OcrResultView({ ocrResult, analyzing, translations }: Oc
 
 
       {/* コンテンツ部分 - すべてのページをスクロール表示 */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto bg-white scroll-smooth p-1">
+      <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-white scroll-smooth p-1">
         {ocrResult.pages.map((page: OCRPageObject, index: number) => (
           <div
             key={`page-${index}`}

@@ -359,7 +359,7 @@ export default function FileUploader() {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left side: File preview */}
         <div
-          className={`w-full md:w-1/2 p-0 md:p-2 overflow-auto bg-gray-100 border-r border-gray-200 ${
+          className={`w-full md:w-1/2 p-0 md:p-2 overflow-y-auto overflow-x-hidden bg-gray-100 border-r border-gray-200 ${
             activeTab === "preview" ? "block h-full" : "hidden md:block"
           }`}
         >
@@ -428,7 +428,7 @@ export default function FileUploader() {
 
         {/* Right side: OCR results */}
         <div
-          className={`w-full md:w-1/2 p-0 md:p-2 overflow-auto bg-white md:bg-gray-50 ${
+          className={`w-full md:w-1/2 p-0 md:p-2 overflow-y-auto overflow-x-hidden bg-white md:bg-gray-50 ${
             activeTab === "result" || activeTab === "text" ? "block h-full" : "hidden md:block"
           }`}
         >
